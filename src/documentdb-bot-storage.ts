@@ -1,51 +1,78 @@
 import { IBotStorage, IBotStorageContext, IBotStorageData } from 'botbuilder';
-import { DocumentClient as DDB, RequestOptions, RequestCallback } from 'documentdb';
-
-export interface DocumentClient extends DDB {
-    readDocument<T>(documentLink: string, options: RequestOptions, callback: RequestCallback<T>): void;
-    upsertDocument<T>(documentsFeedOrDatabaseLink: string, body: T, options: RequestOptions, callback: RequestCallback<T>): void;
-}
+import { DocumentClient } from 'documentdb';
+import async = require('async');
 
 export class DocumentDbBotStorage implements IBotStorage {
-    constructor(private client: DocumentClient, private documentsFeedOrDatabaseLink: string, private parallel?: boolean) { }
 
-    getData(context: IBotStorageContext, callback: (err: Error, data: IBotStorageData) => void): void {
-      const keys: {userData?:any, privateConversationData?:any, conversationData?:any} = {};
+    private maxConcurrency: number;
+
+    /**
+     * Create new DocumentDbBotStorage
+     * @param client A DocumentDB client Object
+     * @param collectionLink The collection where data will be stored
+     * @param partitioned True if collection is partitioned on the id property
+     * @param parallel True if all keys in a given context should be written concurrently (up to 3 concurrent writes per context)
+     */
+    constructor(
+      private client:DocumentClient,
+      private collectionLink:string,
+      private partitioned?:boolean,
+      parallel?: boolean) {
+        this.maxConcurrency = parallel ? 3 : 1;
+      }
+
+    getData(context:IBotStorageContext, callback:(err: Error, data: IBotStorageData) => void): void {
+      const lookupKeys: {userData?:any, privateConversationData?:any, conversationData?:any} = {};
       if (context.userId) {
         if (context.persistUserData) {
-          keys.userData = context.userId;
+          lookupKeys.userData = this.userId(context);
         }
         if (context.conversationId) {
-          keys.privateConversationData = `${context.userId}:${context.conversationId}`;
+          lookupKeys.privateConversationData = this.privateConversationId(context);
         }
       }
       if (context.persistConversationData && context.conversationId) {
-        keys.conversationData = context.conversationId;
+        lookupKeys.conversationData = this.conversationId(context);
       }
-      const concurrency = this.parallel ? Object.keys(keys).length : 1;
-      async.waterfall([
-        (next:any) => async.mapLimit(keys, concurrency, (key, next) => {
-          this.client.readDocument(key, null, next);
-        }, next),
-        (resource:any, resp:any, next:any) => next(null, resource.data),
-      ], callback);
-    }
-    saveData(context: IBotStorageContext, data: IBotStorageData, callback?: (err: Error) => void): void {
-      const docs: {key:string, data:any}[] = [];
-      if (context.userId) {
-        if (context.persistUserData) {
-          docs.push({ key: context.userId, data: data.userData });
-        }
-        if (context.conversationId) {
-          docs.push({ key: `${context.userId}:${context.conversationId}`, data: data.privateConversationData });
-        }
-      }
-      if (context.persistConversationData && context.conversationId) {
-        docs.push({ key: context.conversationId, data: data.conversationData });
-      }
-      const concurrency = this.parallel ? docs.length : 1;
-      async.eachLimit(docs, concurrency, (data, next:any) => {
-        this.client.upsertDocument(this.documentsFeedOrDatabaseLink, { id: data.key, data: data || {} }, null, next);
+      async.mapValuesLimit(lookupKeys, this.maxConcurrency, (docId, type, next) => {
+        const partitionKey = this.partitioned ? docId : null;
+        const docLink = `${this.collectionLink}/docs/${docId}`;
+        async.waterfall([
+          (next:any) => this.client.readDocument(docLink, { partitionKey:partitionKey }, next),
+          (resource:any, headers:any, next:any) => next(null, resource.data),
+        ], next);
       }, callback);
-    };
+    }
+
+    saveData(context:IBotStorageContext, data:IBotStorageData, callback?:(err: Error) => void): void {
+      const docs: {id:string, data:any}[] = [];
+      if (context.userId) {
+        if (context.persistUserData) {
+          docs.push({ id: this.userId(context), data: data.userData });
+        }
+        if (context.conversationId) {
+          docs.push({ id:this.privateConversationId(context), data: data.privateConversationData });
+        }
+      }
+      if (context.persistConversationData && context.conversationId) {
+        docs.push({ id: this.conversationId(context), data: data.conversationData });
+      }
+      async.eachLimit(docs, this.maxConcurrency, (doc, next:any) => {
+        const partitionKey = this.partitioned ? doc.id : null;
+        doc.data = doc.data || {};
+        this.client.upsertDocument(this.collectionLink, doc, { partitionKey:partitionKey, disableAutomaticIdGeneration:true }, next);
+      }, callback);
+    }
+
+    private userId(context:IBotStorageContext): string {
+      return `user:${context.userId}`;
+    }
+
+    private conversationId(context:IBotStorageContext): string {
+      return `conversation:${context.conversationId}`;
+    }
+
+    private privateConversationId(context:IBotStorageContext): string {
+      return `${this.conversationId(context)};${this.userId(context)}`;
+    }
 }
