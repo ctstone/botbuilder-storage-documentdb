@@ -19,12 +19,12 @@
     "async": "^2.2.0"
   },
   "peerDependencies": {
-    "botbuilder": "^3.7.0",
     "documentdb": "^1.11.0"
   },
   "devDependencies": {
     "@types/async": "^2.0.40",
     "@types/jasmine": "^2.5.47",
+    "botbuilder": "^3.7.0",
     "jasmine": "^2.5.3",
     "jasmine-reporters": "^2.2.1",
     "tslint": "^5.0.0",
