@@ -3,6 +3,8 @@ src
 spec
 coverage
 .eslintrc.json
+tslint.json
 tsconfig.json
 *.tar.gz
 *.tgz
+*.xml
