@@ -11,7 +11,7 @@
     "watch": "tsc -w",
     "lint": "tslint -p tsconfig.json",
     "release:local": "npm version patch && npm pack",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push origin HEAD:$(Build.SourceBranchName) && git push origin HEAD:$(Build.SourceBranchName) --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
