@@ -6,7 +6,7 @@ describe('DocumentDB bot storage', () => {
   let storageContext;
   let storageData;
   beforeAll(() => {
-    DocumentDbBotStorage = require('../dist/documentdb-bot-storage').DocumentDbBotStorage;
+    DocumentDbBotStorage = require('../dist').DocumentDbBotStorage;
     MockDocumentClient = require('../dist/mock-document-client').MockDocumentClient;
   });
 
