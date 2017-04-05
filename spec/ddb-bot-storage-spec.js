@@ -12,7 +12,7 @@ describe('DocumentDB bot storage', () => {
 
   beforeEach(() => {
     client = new MockDocumentClient();
-    botStorage = new DocumentDbBotStorage(client, 'dbs/foo/colls/bar');
+    botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
     storageContext = {userId:'1', conversationId:'1', persistUserData:true, persistConversationData:true};
     storageData = {userData:{foo:{bar:123}}, privateConversationData:{asdf:456}, conversationData:{blah:[1,2,3]}};
   });
@@ -25,7 +25,40 @@ describe('DocumentDB bot storage', () => {
     });
   });
 
+  describe('when database exists', () => {
+    beforeEach(() => {
+      client = new MockDocumentClient(true);
+      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
+    });
+
+    it('should not throw', (done) => {
+      botStorage.saveData(storageContext, storageData, (err) => {
+        expect(client.database).toBeUndefined();
+        expect(err).toBe(null);
+        done();
+      });
+    });
+  });
+
+  describe('when collection exists', () => {
+    beforeEach(() => {
+      client = new MockDocumentClient(false, true);
+      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
+    });
+
+    it('should not throw', (done) => {
+      botStorage.saveData(storageContext, storageData, (err) => {
+        expect(client.collection).toBeUndefined();
+        expect(err).toBe(null);
+        done();
+      });
+    });
+  });
+
   describe('without partitioning', () => {
+    beforeEach(() => {
+      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar', 10000);
+    });
     it('should not write partitionKey', (done) => {
       botStorage.saveData(storageContext, storageData, (err) => {
         if (err) throw err;
@@ -36,9 +69,6 @@ describe('DocumentDB bot storage', () => {
   });
 
   describe('with partitioning', () => {
-    beforeEach(() => {
-      botStorage = new DocumentDbBotStorage(client, 'dbs/foo/colls/bar', true);
-    })
     it('should write partitionKey', (done) => {
       botStorage.saveData(storageContext, storageData, (err) => {
         if (err) throw err;
