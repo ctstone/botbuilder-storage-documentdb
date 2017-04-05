@@ -11,7 +11,7 @@
     "release:local": "npm version patch && npm pack"
   },
   "keywords": [],
-  "author": "",
+  "author": "chstone@microsoft.com",
   "license": "MIT",
   "dependencies": {
     "async": "^2.2.0"
