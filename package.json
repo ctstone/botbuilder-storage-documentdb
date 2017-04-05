@@ -10,7 +10,8 @@
     "test": "jasmine",
     "watch": "tsc -w",
     "lint": "tslint -p tsconfig.json",
-    "release:local": "npm version patch && npm pack"
+    "release:local": "npm version patch && npm pack",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
