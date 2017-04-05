@@ -1,0 +1,7 @@
+node_modules
+src
+spec
+.eslintrc.json
+tsconfig.json
+*.tar.gz
+*.tgz
