@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@types/async": "^2.0.40",
-    "@types/documentdb": "0.0.35",
     "@types/jasmine": "^2.5.47",
     "jasmine-reporters": "^2.2.1",
     "tslint": "^5.0.0",

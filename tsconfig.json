@@ -9,7 +9,11 @@
     "sourceMap": false,
     "skipLibCheck": true,
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "baseUrl": "./",
+    "paths":{
+      "*": ["typings/*"]
+    }
   },
 
   "exclude": [
