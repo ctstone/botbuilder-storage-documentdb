@@ -6,12 +6,14 @@
   "scripts": {
     "tsc": "tsc",
     "jasmine": "jasmine",
+    "istanbul": "istanbul",
     "build": "tsc",
-    "test": "jasmine",
+    "test": "istanbul cover --report cobertura node_modules/jasmine/bin/jasmine.js",
     "watch": "tsc -w",
     "lint": "tslint -p tsconfig.json",
-    "release:local": "npm version patch && npm pack",
-    "postversion": "git push origin HEAD:$(Build.SourceBranchName) && git push origin HEAD:$(Build.SourceBranchName) --tags"
+    "bump": "npm version patch",
+    "release:local": "npm pack",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
@@ -28,6 +30,7 @@
     "@types/jasmine": "^2.5.47",
     "botbuilder": "^3.7.0",
     "documentdb": "^1.11.0",
+    "istanbul": "^0.4.5",
     "jasmine": "^2.5.3",
     "jasmine-reporters": "^2.2.1",
     "tslint": "^5.0.0",
