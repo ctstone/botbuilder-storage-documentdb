@@ -1,13 +1,15 @@
 {
   "name": "botbuilder-storage-ddb",
   "version": "1.0.2",
-  "description": "",
+  "description": "IBotStorage implementation for DocumentDB",
   "main": "dist/documentdb-bot-storage.js",
   "scripts": {
     "tsc": "tsc",
     "jasmine": "jasmine",
     "build": "tsc",
     "test": "jasmine",
+    "watch": "tsc -w",
+    "lint": "tslint -p tsconfig.json",
     "release:local": "npm version patch && npm pack"
   },
   "keywords": [],
@@ -24,6 +26,7 @@
     "@types/async": "^2.0.40",
     "@types/documentdb": "0.0.35",
     "@types/jasmine": "^2.5.47",
+    "tslint": "^5.0.0",
     "typescript": "^2.2.2"
   }
 }
