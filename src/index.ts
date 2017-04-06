@@ -82,7 +82,7 @@ export class DocumentDbBotStorage implements IBotStorage {
         const docLink = `dbs/${this.databaseName}/colls/${this.collectionName}/docs/${docId}`;
         async.waterfall([
           (next: RequestCallback<RetrievedDocument<any>>) => this.tryReadDocument(docLink, { partitionKey }, { data: null }, next),
-          (resource: any, headers: any, next: (err: QueryError, data: any) => void) => next(null, resource),
+          (resource: any, headers: any, next: (err: QueryError, data: any) => void) => next(null, resource.data),
         ], next);
       }, callback);
     }
@@ -117,6 +117,7 @@ export class DocumentDbBotStorage implements IBotStorage {
           },
           (next: (err: QueryError) => void) => this.createCollectionIfNotExists(next),
         ], (err: any) => {
+          this.initialization = err || true;
           callback(err);
           this.pendingInit.forEach((x) => x(err));
           this.pendingInit.length = 0;
