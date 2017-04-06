@@ -1,10 +1,11 @@
 import { IBotStorage, IBotStorageContext, IBotStorageData } from 'botbuilder';
-import { Collection, DocumentClient, QueryError } from 'documentdb';
+import { Collection, DocumentClient, QueryError, RequestCallback, RequestOptions, RetrievedDocument } from 'documentdb';
 import async = require('async');
 
 const ONE_WEEK_IN_SECONDS = 604800;
 const DEFAULT_THROUGHPUT = 20000;
 const HTTP_CONFLICT = 409;
+const HTTP_NOT_FOUND = 404;
 
 type DocumentDbCallback = (err: QueryError, ...args: any[]) => void;
 
@@ -80,8 +81,8 @@ export class DocumentDbBotStorage implements IBotStorage {
         const partitionKey = this.partitioned ? docId : null;
         const docLink = `dbs/${this.databaseName}/colls/${this.collectionName}/docs/${docId}`;
         async.waterfall([
-          (next: any) => this.client.readDocument(docLink, { partitionKey }, next),
-          (resource: any, headers: any, next: any) => next(null, resource.data),
+          (next: RequestCallback<RetrievedDocument<any>>) => this.tryReadDocument(docLink, { partitionKey }, { data: null }, next),
+          (resource: any, headers: any, next: (err: QueryError, data: any) => void) => next(null, resource),
         ], next);
       }, callback);
     }
@@ -121,6 +122,12 @@ export class DocumentDbBotStorage implements IBotStorage {
           this.pendingInit.length = 0;
         });
       }
+    }
+
+    private tryReadDocument(docLink: string, options: RequestOptions, defaultDoc: any, callback: RequestCallback<RetrievedDocument<any>>): void {
+      this.client.readDocument(docLink, options, (err, resource, responseHeaders) => {
+        callback(err && err.code === HTTP_NOT_FOUND ? null : err, resource || defaultDoc, responseHeaders);
+      });
     }
 
     private createDatabaseIfNotExists(callback: DocumentDbCallback): void {
