@@ -132,8 +132,8 @@ export class DocumentDbBotStorage implements IBotStorage {
     private createCollectionIfNotExists(callback: (err: QueryError) => void): void {
       const collection: Collection = {
         defaultTtl: this.defaultTtl,
-        id: this.databaseName,
-        partitionKey: this.partitioned ? 'id' : null,
+        id: this.collectionName,
+        partitionKey: this.partitioned ? { path: [ '/id' ], kind: 'Hash' } : null,
       };
       const collectionOpts = { offerThroughput: this.collectionThroughput };
       this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
