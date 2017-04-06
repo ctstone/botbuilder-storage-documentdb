@@ -26,6 +26,22 @@ export class MockDocumentClient extends DocumentClient {
     }
   }
 
+  readDatabase(dbLink: string, callback: RequestCallback<any>): void {
+    if (this.databaseExists) {
+      callback(null, {}, {});
+    } else {
+      callback({code: 404, body: 'Not Found'}, null, null);
+    }
+  }
+
+  readCollection(collLink: string, callback: RequestCallback<any>): void {
+    if (this.collectionExists) {
+      callback(null, {}, {});
+    } else {
+      callback({code: 404, body: 'Not Found'}, null, null);
+    }
+  }
+
   upsertDocument<T>(documentsFeedOrDatabaseLink: string, body: NewDocument<T>, ...args: any[]): void {
     const [options, callback] = this.optionsOrCallback<DocumentOptions, RequestCallback<RetrievedDocument<T>>>(args[0], args[1]);
     const doc = body as RetrievedDocument<T>;
