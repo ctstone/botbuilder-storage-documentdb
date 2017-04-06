@@ -171,7 +171,7 @@ export class DocumentDbBotStorage implements IBotStorage {
             return next(null);
           }
           this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
-            callback(err && err.code !== HTTP_CONFLICT ? err : null);
+            next(err && err.code !== HTTP_CONFLICT ? err : null);
           });
         },
       ], callback);
