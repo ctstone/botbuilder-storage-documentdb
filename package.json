@@ -1,6 +1,6 @@
 {
   "name": "botbuilder-storage-ddb",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "IBotStorage implementation for DocumentDB",
   "main": "dist",
   "scripts": {
