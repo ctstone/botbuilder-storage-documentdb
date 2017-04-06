@@ -124,6 +124,18 @@ export class DocumentDbBotStorage implements IBotStorage {
       }
     }
 
+    private databaseExists(id: string, callback: (err: QueryError, exists: boolean) => void): void {
+      this.client.readDatabase(`dbs/${id}`, (err, db, headers) => {
+        callback(err && err.code === HTTP_NOT_FOUND ? null : err, !!db);
+      });
+    }
+
+    private collectionExists(database: string, id: string, callback: (err: QueryError, exists: boolean) => void): void {
+      this.client.readCollection(`dbs/${database}/colls/${id}`, (err, coll, headers) => {
+        callback(err && err.code === HTTP_NOT_FOUND ? null : err, !!coll);
+      });
+    }
+
     private tryReadDocument(docLink: string, options: RequestOptions, defaultDoc: any, callback: RequestCallback<RetrievedDocument<any>>): void {
       this.client.readDocument(docLink, options, (err, resource, responseHeaders) => {
         callback(err && err.code === HTTP_NOT_FOUND ? null : err, resource || defaultDoc, responseHeaders);
@@ -131,9 +143,17 @@ export class DocumentDbBotStorage implements IBotStorage {
     }
 
     private createDatabaseIfNotExists(callback: DocumentDbCallback): void {
-      this.client.createDatabase({id: this.databaseName}, (err) => {
-        callback(err && err.code !== HTTP_CONFLICT ? err : null);
-      });
+      async.waterfall([
+        (next: any) => this.databaseExists(this.databaseName, next),
+        (exists: boolean, next: any) => {
+          if (exists) {
+            return next(null);
+          }
+          this.client.createDatabase({ id: this.databaseName }, (err) => {
+            next(err && err.code !== HTTP_CONFLICT ? err : null);
+          });
+        },
+      ], callback);
     }
 
     private createCollectionIfNotExists(callback: (err: QueryError) => void): void {
@@ -143,9 +163,18 @@ export class DocumentDbBotStorage implements IBotStorage {
         partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : null,
       };
       const collectionOpts = { offerThroughput: this.collectionThroughput };
-      this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
-        callback(err && err.code !== HTTP_CONFLICT ? err : null);
-      });
+
+      async.waterfall([
+        (next: any) => this.collectionExists(this.databaseName, this.collectionName, next),
+        (exists: boolean, next: any) => {
+          if (exists) {
+            return next(null);
+          }
+          this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
+            callback(err && err.code !== HTTP_CONFLICT ? err : null);
+          });
+        },
+      ], callback);
     }
 
     private userId(context: IBotStorageContext): string {
