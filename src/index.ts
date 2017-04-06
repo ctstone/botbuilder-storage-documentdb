@@ -133,7 +133,7 @@ export class DocumentDbBotStorage implements IBotStorage {
       const collection: Collection = {
         defaultTtl: this.defaultTtl,
         id: this.collectionName,
-        partitionKey: this.partitioned ? { path: [ '/id' ], kind: 'Hash' } : null,
+        partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : null,
       };
       const collectionOpts = { offerThroughput: this.collectionThroughput };
       this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {

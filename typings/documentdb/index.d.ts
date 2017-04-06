@@ -161,7 +161,7 @@ interface DatabaseMeta extends AbstractMeta {
 
 /** Represents the meta data for a collection. */
 // tslint:disable-next-line:no-empty-interface
-interface CollectionMeta extends AbstractMeta {
+interface CollectionMeta extends Collection, AbstractMeta {
 }
 
 /** Represents the meta data for a stored procedure. */
@@ -391,7 +391,7 @@ export interface CollectionPartitionKey {
      * 
      * The array must contain only a single value.
      */
-    path: string[];
+    paths: string[];
 
     /**
      * The algorithm used for partitioning. Only Hash is supported.
