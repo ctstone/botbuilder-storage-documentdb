@@ -1,5 +1,5 @@
 import { IBotStorage, IBotStorageContext, IBotStorageData } from 'botbuilder';
-import { DocumentClient, QueryError } from 'documentdb';
+import { Collection, DocumentClient, QueryError } from 'documentdb';
 import async = require('async');
 
 const ONE_WEEK_IN_SECONDS = 604800;
@@ -130,7 +130,11 @@ export class DocumentDbBotStorage implements IBotStorage {
     }
 
     private createCollectionIfNotExists(callback: (err: QueryError) => void): void {
-      const collection = { id: this.databaseName, defaultTtl: this.defaultTtl };
+      const collection: Collection = {
+        defaultTtl: this.defaultTtl,
+        id: this.databaseName,
+        partitionKey: this.partitioned ? 'id' : null,
+      };
       const collectionOpts = { offerThroughput: this.collectionThroughput };
       this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
         callback(err && err.code !== HTTP_CONFLICT ? err : null);
