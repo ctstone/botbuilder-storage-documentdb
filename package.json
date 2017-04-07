@@ -13,11 +13,15 @@
     "lint": "tslint -p tsconfig.json",
     "bump": "npm version patch",
     "release:local": "npm pack",
-    "postversion": "git push --tags"
+    "preversion": "git config user.name %npm_package_config_git_user% && git config user.email %npm_package_author_name%",
+    "postversion": "git push origin HEAD:%BUILD_SOURCEBRANCH% && git push --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
   "license": "MIT",
+  "config": {
+    "git_user": "CI"
+  },
   "dependencies": {
     "async": "^2.2.0"
   },
