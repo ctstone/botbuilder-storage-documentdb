@@ -13,7 +13,7 @@
     "lint": "tslint -p tsconfig.json",
     "bump": "npm version patch",
     "release:local": "npm pack",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
