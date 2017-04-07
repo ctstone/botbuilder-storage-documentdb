@@ -12,9 +12,9 @@
     "watch": "tsc -w",
     "lint": "tslint -p tsconfig.json",
     "bump": "npm version patch -m \"Bump to %s ***NO_CI***\" ",
+    "bump:push": "git push origin HEAD:%BUILD_SOURCEBRANCH% && git push --tags",
     "release:local": "npm pack",
-    "preversion": "git config user.name CI && git config user.email %npm_package_author_name%",
-    "postversion": "git push origin HEAD:%BUILD_SOURCEBRANCH% && git push --tags"
+    "preversion": "git config user.name CI && git config user.email %npm_package_author_name%"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
