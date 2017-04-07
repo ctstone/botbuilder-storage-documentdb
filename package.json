@@ -1,6 +1,6 @@
 {
   "name": "botbuilder-storage-ddb",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "IBotStorage implementation for DocumentDB",
   "main": "dist",
   "scripts": {
@@ -11,17 +11,14 @@
     "test": "istanbul cover --dir %COMMON_TESTRESULTSDIRECTORY%/coverage --report cobertura --report html node_modules/jasmine/bin/jasmine.js",
     "watch": "tsc -w",
     "lint": "tslint -p tsconfig.json",
-    "bump": "npm version patch",
+    "bump": "npm version patch -m \"Bump to %s ***NO_CI***\" ",
     "release:local": "npm pack",
-    "preversion": "git config user.name %npm_package_config_git_user% && git config user.email %npm_package_author_name%",
+    "preversion": "git config user.name CI && git config user.email %npm_package_author_name%",
     "postversion": "git push origin HEAD:%BUILD_SOURCEBRANCH% && git push --tags"
   },
   "keywords": [],
   "author": "chstone@microsoft.com",
   "license": "MIT",
-  "config": {
-    "git_user": "CI"
-  },
   "dependencies": {
     "async": "^2.2.0"
   },
