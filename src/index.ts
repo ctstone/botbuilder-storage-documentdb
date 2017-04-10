@@ -91,7 +91,7 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     private readData(keys: {userData?: string, privateConversationData?: string, conversationData?: string}, callback: (err: QueryError, data: IBotStorageData) => void): void {
       async.mapValuesLimit(keys, this.maxConcurrency, (docId, type, next) => {
-        const partitionKey = this.partitioned ? docId : null;
+        const partitionKey = this.partitioned ? docId : undefined;
         const docLink = `dbs/${this.options.databaseName}/colls/${this.options.collectionName}/docs/${docId}`;
         async.waterfall([
           (next: RequestCallback<RetrievedDocument<any>>) => this.tryReadDocument(docLink, { partitionKey }, { data: null }, next),
@@ -102,7 +102,7 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     private writeData(docs: Array<{id: string, data: any}>, callback: (err: QueryError) => void): void {
       async.eachLimit(docs, this.maxConcurrency, (doc, next: (err: QueryError) => void) => {
-        const partitionKey = this.partitioned ? doc.id : null;
+        const partitionKey = this.partitioned ? doc.id : undefined;
         doc.data = doc.data || {};
         this.client.upsertDocument(`dbs/${this.options.databaseName}/colls/${this.options.collectionName}`, doc, { partitionKey, disableAutomaticIdGeneration: true }, next);
       }, callback);
@@ -172,17 +172,11 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     private createCollectionIfNotExists(callback: (err: QueryError) => void): void {
       const collection: Collection = {
-        defaultTtl: this.options.defaultTtl || null,
+        defaultTtl: this.options.defaultTtl || undefined,
         id: this.options.collectionName,
-        partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : null,
+        partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : undefined,
       };
       const collectionOpts = { offerThroughput: this.options.collectionThroughput };
-      if (!collection.partitionKey) {
-        delete collection.partitionKey;
-      }
-      if (!collection.partitionKey) {
-        delete collection.partitionKey;
-      }
 
       async.waterfall([
         (next: any) => this.collectionExists(this.options.databaseName, this.options.collectionName, next),
