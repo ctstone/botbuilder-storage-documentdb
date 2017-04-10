@@ -64,7 +64,7 @@ describe('DocumentDB bot storage', () => {
     it('should not write partitionKey', (done) => {
       botStorage.saveData(storageContext, storageData, (err) => {
         if (err) throw err;
-        expect(client.args[0].partitionKey).toBe(null);
+        expect(client.args[0].partitionKey).toBeUndefined();
         done();
       });
     });
