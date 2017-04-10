@@ -4,6 +4,7 @@
     "member-access": [true, "no-public"],
     "max-line-length": [true, 200],
     "quotemark": [false],
-    "no-shadowed-variable": false
+    "no-shadowed-variable": false,
+    "interface-name": [ false ]
   }
 }

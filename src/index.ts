@@ -3,11 +3,29 @@ import { Collection, DocumentClient, QueryError, RequestCallback, RequestOptions
 import async = require('async');
 
 const ONE_WEEK_IN_SECONDS = 604800;
-const DEFAULT_THROUGHPUT = 20000;
+const DEFAULT_THROUGHPUT = 10000;
+const DEFAULT_PARALLEL = true;
 const HTTP_CONFLICT = 409;
 const HTTP_NOT_FOUND = 404;
 
 type DocumentDbCallback = (err: QueryError, ...args: any[]) => void;
+
+export interface DocumentDbBotStorageOptions {
+  /** Database name to use for bot session storage (created if it does not exist) */
+  databaseName: string;
+
+  /** Collection name to use for bot session storage (created if it does not exist) */
+  collectionName: string;
+
+  /** Collection throughput for created collections (default: 10000) */
+  collectionThroughput?: number;
+
+  /** Default time-to-live for created collections (default 1 week) */
+  defaultTtl?: number;
+
+  /** True to write session keys concurrently (default true) */
+  parallel?: true;
+}
 
 export class DocumentDbBotStorage implements IBotStorage {
 
@@ -18,22 +36,14 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     /**
      * Create new DocumentDbBotStorage
-     * @param client A DocumentDB client Object
-     * @param databaseName Name of the database to store data. Will be created if it does not exit
-     * @param collectionName Name of the collection to store data. Will be created if it does not exit
-     * @param collectionThroughput Number of Request Units to reserve for the collection if it does not already exist
-     * @param defaultTtl Time-to-live for session data. -1 to never expire.
-     * @param parallel True if all keys in a given context should be written concurrently (up to 3 concurrent writes per context)
+     * @param client A DocumentDB client object
+     * @param options Storage configuration
      */
-    constructor( // TODO change options to {}
+    constructor(
       private client: DocumentClient,
-      private databaseName: string,
-      private collectionName: string,
-      private collectionThroughput = DEFAULT_THROUGHPUT,
-      private defaultTtl = ONE_WEEK_IN_SECONDS,
-      parallel = true) {
-        this.maxConcurrency = parallel ? 3 : 1;
-        this.partitioned = this.collectionThroughput > 10000;
+      private options: DocumentDbBotStorageOptions) {
+        this.maxConcurrency = options.parallel ? 3 : 1;
+        this.partitioned = this.options.collectionThroughput > 10000;
       }
 
     getData(context: IBotStorageContext, callback: (err: Error, data: IBotStorageData) => void): void {
@@ -79,7 +89,7 @@ export class DocumentDbBotStorage implements IBotStorage {
     private readData(keys: {userData?: string, privateConversationData?: string, conversationData?: string}, callback: (err: QueryError, data: IBotStorageData) => void): void {
       async.mapValuesLimit(keys, this.maxConcurrency, (docId, type, next) => {
         const partitionKey = this.partitioned ? docId : null;
-        const docLink = `dbs/${this.databaseName}/colls/${this.collectionName}/docs/${docId}`;
+        const docLink = `dbs/${this.options.databaseName}/colls/${this.options.collectionName}/docs/${docId}`;
         async.waterfall([
           (next: RequestCallback<RetrievedDocument<any>>) => this.tryReadDocument(docLink, { partitionKey }, { data: null }, next),
           (resource: any, headers: any, next: (err: QueryError, data: any) => void) => next(null, resource.data),
@@ -91,7 +101,7 @@ export class DocumentDbBotStorage implements IBotStorage {
       async.eachLimit(docs, this.maxConcurrency, (doc, next: (err: QueryError) => void) => {
         const partitionKey = this.partitioned ? doc.id : null;
         doc.data = doc.data || {};
-        this.client.upsertDocument(`dbs/${this.databaseName}/colls/${this.collectionName}`, doc, { partitionKey, disableAutomaticIdGeneration: true }, next);
+        this.client.upsertDocument(`dbs/${this.options.databaseName}/colls/${this.options.collectionName}`, doc, { partitionKey, disableAutomaticIdGeneration: true }, next);
       }, callback);
     }
 
@@ -145,12 +155,12 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     private createDatabaseIfNotExists(callback: DocumentDbCallback): void {
       async.waterfall([
-        (next: any) => this.databaseExists(this.databaseName, next),
+        (next: any) => this.databaseExists(this.options.databaseName, next),
         (exists: boolean, next: any) => {
           if (exists) {
             return next(null);
           }
-          this.client.createDatabase({ id: this.databaseName }, (err) => {
+          this.client.createDatabase({ id: this.options.databaseName }, (err) => {
             next(err && err.code !== HTTP_CONFLICT ? err : null);
           });
         },
@@ -159,19 +169,19 @@ export class DocumentDbBotStorage implements IBotStorage {
 
     private createCollectionIfNotExists(callback: (err: QueryError) => void): void {
       const collection: Collection = {
-        defaultTtl: this.defaultTtl,
-        id: this.collectionName,
+        defaultTtl: this.options.defaultTtl || null,
+        id: this.options.collectionName,
         partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : null,
       };
-      const collectionOpts = { offerThroughput: this.collectionThroughput };
+      const collectionOpts = { offerThroughput: this.options.collectionThroughput };
 
       async.waterfall([
-        (next: any) => this.collectionExists(this.databaseName, this.collectionName, next),
+        (next: any) => this.collectionExists(this.options.databaseName, this.options.collectionName, next),
         (exists: boolean, next: any) => {
           if (exists) {
             return next(null);
           }
-          this.client.createCollection(`dbs/${this.databaseName}`, collection, collectionOpts, (err) => {
+          this.client.createCollection(`dbs/${this.options.databaseName}`, collection, collectionOpts, (err) => {
             next(err && err.code !== HTTP_CONFLICT ? err : null);
           });
         },
