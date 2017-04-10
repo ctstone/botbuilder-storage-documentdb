@@ -177,6 +177,12 @@ export class DocumentDbBotStorage implements IBotStorage {
         partitionKey: this.partitioned ? { paths: [ '/id' ], kind: 'Hash' } : null,
       };
       const collectionOpts = { offerThroughput: this.options.collectionThroughput };
+      if (!collection.partitionKey) {
+        delete collection.partitionKey;
+      }
+      if (!collection.partitionKey) {
+        delete collection.partitionKey;
+      }
 
       async.waterfall([
         (next: any) => this.collectionExists(this.options.databaseName, this.options.collectionName, next),
