@@ -20,11 +20,11 @@ export interface DocumentDbBotStorageOptions {
   /** Collection throughput for created collections (default: 10000) */
   collectionThroughput?: number;
 
-  /** Default time-to-live for created collections (default 1 week) */
+  /** Default document time-to-live for created collections (default 1 week; null to disable) */
   defaultTtl?: number;
 
-  /** True to write session keys concurrently (default true) */
-  parallel?: true;
+  /** Write all keys in a session concurrently (default true) */
+  parallel?: boolean;
 }
 
 export class DocumentDbBotStorage implements IBotStorage {
@@ -42,6 +42,9 @@ export class DocumentDbBotStorage implements IBotStorage {
     constructor(
       private client: DocumentClient,
       private options: DocumentDbBotStorageOptions) {
+        this.options.collectionThroughput = this.options.collectionThroughput || DEFAULT_THROUGHPUT;
+        this.options.defaultTtl = this.options.defaultTtl === undefined ? ONE_WEEK_IN_SECONDS : this.options.defaultTtl;
+        this.options.parallel = this.options.parallel === false ? false : true;
         this.maxConcurrency = options.parallel ? 3 : 1;
         this.partitioned = this.options.collectionThroughput > 10000;
       }
