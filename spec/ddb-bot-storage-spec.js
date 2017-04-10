@@ -5,6 +5,8 @@ describe('DocumentDB bot storage', () => {
   let client;
   let storageContext;
   let storageData;
+  let storageConf = { databaseName: 'foo', collectionName: 'bar' };
+  let storageConfPartitioned = { databaseName: 'foo', collectionName: 'bar', collectionThroughput:20000 };
   beforeAll(() => {
     DocumentDbBotStorage = require('../dist').DocumentDbBotStorage;
     MockDocumentClient = require('../dist/mock-document-client').MockDocumentClient;
@@ -12,7 +14,7 @@ describe('DocumentDB bot storage', () => {
 
   beforeEach(() => {
     client = new MockDocumentClient();
-    botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
+    botStorage = new DocumentDbBotStorage(client, storageConf);
     storageContext = {userId:'1', conversationId:'1', persistUserData:true, persistConversationData:true};
     storageData = {userData:{foo:{bar:123}}, privateConversationData:{asdf:456}, conversationData:{blah:[1,2,3]}};
   });
@@ -28,7 +30,7 @@ describe('DocumentDB bot storage', () => {
   describe('when database exists', () => {
     beforeEach(() => {
       client = new MockDocumentClient(true);
-      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
+      botStorage = new DocumentDbBotStorage(client, storageConf);
     });
 
     it('should not throw', (done) => {
@@ -43,7 +45,7 @@ describe('DocumentDB bot storage', () => {
   describe('when collection exists', () => {
     beforeEach(() => {
       client = new MockDocumentClient(false, true);
-      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar');
+      botStorage = new DocumentDbBotStorage(client, storageConf);
     });
 
     it('should not throw', (done) => {
@@ -57,7 +59,7 @@ describe('DocumentDB bot storage', () => {
 
   describe('without partitioning', () => {
     beforeEach(() => {
-      botStorage = new DocumentDbBotStorage(client, 'foo', 'bar', 10000);
+      botStorage = new DocumentDbBotStorage(client, storageConf);
     });
     it('should not write partitionKey', (done) => {
       botStorage.saveData(storageContext, storageData, (err) => {
@@ -69,6 +71,9 @@ describe('DocumentDB bot storage', () => {
   });
 
   describe('with partitioning', () => {
+    beforeEach(() => {
+      botStorage = new DocumentDbBotStorage(client, storageConfPartitioned);
+    });
     it('should write partitionKey', (done) => {
       botStorage.saveData(storageContext, storageData, (err) => {
         if (err) throw err;
